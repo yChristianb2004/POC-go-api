@@ -9,13 +9,32 @@ import (
 	"gorm.io/gorm"
 )
 
+// RegisterRequest define os dados esperados para registro
+type RegisterRequest struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+// LoginRequest define os dados esperados para login
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+// Register cria um novo usuário
+// @Summary Registro de usuário
+// @Description Cria um novo usuário com nome, email e senha
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param user body RegisterRequest true "Dados do usuário"
+// @Success 201 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /register [post]
 func Register(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req struct {
-			Name     string `json:"name"`
-			Email    string `json:"email"`
-			Password string `json:"password"`
-		}
+		var req RegisterRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(400, gin.H{"error": "Requisição inválida"})
 			return
@@ -32,19 +51,27 @@ func Register(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		// Simular token de verificação
 		token := "dummy-verification-token"
 		utils.SendVerificationEmail(user.Email, token)
 		c.JSON(201, gin.H{"message": "Registrado. Cheque seu email."})
 	}
 }
 
+// Login autentica um usuário existente
+// @Summary Login
+// @Description Autentica o usuário e retorna um token JWT
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param credentials body LoginRequest true "Credenciais"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Router /login [post]
 func Login(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req struct {
-			Email    string `json:"email"`
-			Password string `json:"password"`
-		}
+		var req LoginRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(400, gin.H{"error": "Requisição inválida"})
 			return
@@ -67,9 +94,18 @@ func Login(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
+// VerifyEmail verifica o email com um token fictício
+// @Summary Verificar email
+// @Description Simula a verificação do email com um token
+// @Tags auth
+// @Produce json
+// @Param token path string true "Token de verificação"
+// @Success 200 {object} map[string]string
+// @Router /verify-email/{token} [get]
 func VerifyEmail(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Simular verificação
-		c.JSON(200, gin.H{"message": "Email verificado (POC)"})
+		token := c.Param("token")
+		// Aqui você poderia validar o token de verdade no banco
+		c.JSON(200, gin.H{"message": "Email verificado com token: " + token})
 	}
 }
